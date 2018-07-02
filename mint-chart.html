@@ -1,0 +1,36 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="mint-chart">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]!</h2>
+  </template>
+
+  <script>
+    /**
+     * `mint-chart`
+     * mint chart to display csv data using highcharts
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class MintChart extends Polymer.Element {
+      static get is() { return 'mint-chart'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'mint-chart'
+          }
+        };
+      }
+    }
+
+    window.customElements.define(MintChart.is, MintChart);
+  </script>
+</dom-module>

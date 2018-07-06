@@ -1,36 +1,560 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/lib/utils/debounce.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<link rel="import" href="../shadycss/apply-shim.html">
+<link rel="import" href="../utils-lib/utils-lib.html">
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
+<script src="https://code.highcharts.com/modules/series-label.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
 
 <dom-module id="mint-chart">
-  <template>
-    <style>
-      :host {
-        display: block;
-      }
-    </style>
-    <h2>Hello [[prop1]]!</h2>
-  </template>
+    <template>
+        <div id="mintChart">
+            <div id="pumpChart" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div>
+            <div id="qChart" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div>
+            <div id="gwChart" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div>
+            <div id="pdsiChart" style="width: 100%;height: 170px; margin-left: auto; margin-right: auto"></div>
+        </div>
+        <slot></slot>
+    </template>
+    <script>
+        'use strict';
+        /**
+        @polymer
+        @customElement
+        @appliesMixin Highcharts.Polymer_ChartBehavior
+        @appliesMixin Highcharts.Polymer_BaseBehavior
+        */
+        class MintChart extends Polymer.mixinBehaviors([Polymer.IronResizableBehavior], Polymer.Element) {
+            static get is() {return 'mint-chart'}
+            static get properties() {
+              return {
+                type: {type: String, value: 'spline'},
+              } 
+            }
+            ready() {
+                super.ready();
+                $(this.$.mintChart).bind('mousemove touchmove touchstart', function(e) {
+                  var chart,
+                    point,
+                    i,
+                    event;
 
-  <script>
-    /**
-     * `mint-chart`
-     * mint chart to display csv data using highcharts
-     *
-     * @customElement
-     * @polymer
-     * @demo demo/index.html
-     */
-    class MintChart extends Polymer.Element {
-      static get is() { return 'mint-chart'; }
-      static get properties() {
-        return {
-          prop1: {
-            type: String,
-            value: 'mint-chart'
-          }
-        };
-      }
-    }
+                  for (i = 0; i < Highcharts.charts.length; i = i + 1) {
+                    chart = Highcharts.charts[i];
+                    // Find coordinates within the chart
+                    event = chart.pointer.normalize(e.originalEvent);
+                    // Get the hovered point
+                    point = chart.series[0].searchPoint(event, true);
 
-    window.customElements.define(MintChart.is, MintChart);
-  </script>
+                    if (point) {
+                      point.highlight(e);
+                    }
+                  }
+                });
+                Highcharts.Pointer.prototype.reset = function() {
+                  return undefined;
+                };
+                Highcharts.Point.prototype.highlight = function(event) {
+                  event = this.series.chart.pointer.normalize(event);
+                  this.onMouseOver(); // Show the hover marker
+                  this.series.chart.tooltip.refresh(this); // Show the tooltip
+                  this.series.chart.xAxis[0].drawCrosshair(event, this); // Show the crosshair
+                };
+
+                function syncExtremes(e) {
+                  var thisChart = this.chart;
+
+                  if (e.trigger !== 'syncExtremes') { // Prevent feedback loop
+                    Highcharts.each(Highcharts.charts, function(chart) {
+                      if (chart !== thisChart) {
+                        if (chart.xAxis[0].setExtremes) { // It is null while updating
+                          chart.xAxis[0].setExtremes(
+                            e.min,
+                            e.max,
+                            undefined,
+                            false, {
+                              trigger: 'syncExtremes'
+                            }
+                          );
+                        }
+                      }
+                    });
+                  }
+                }
+
+                let self = this;
+                   //
+                // PUMP chart
+                //
+                $.getJSON("http://jonsnow.usc.edu:8081/mintmap/csv/PUMP_Hamilton.json").done(function(rawData) {
+                    var data = []
+                    $.each(rawData, function(index, item) {
+                        data.push([Date.UTC(item[0], item[1]), item[2]])
+                    })
+                    Highcharts.chart(self.$.pumpChart, {
+                        title: {
+                            text: '<b>Irrigation</b>', //'Annual Pumping'
+                            margin: 5,
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        subtitle: {
+                            text: 'Hamilton County (KGS)',
+                            style: {
+                                fontSize: '11px'
+                            }
+                        },
+                        credits: {
+                            enabled: false
+                        },
+                        legend: {
+                            enabled: false
+                        },
+                        // xAxis: {
+                        //     type: 'datetime',
+                        //     crosshair: true,
+                        //     startOnTick: true,
+                        //     //endOnTick:true,
+                        //     labels: {
+                        //         enabled: false
+                        //     },
+                        // },
+                        xAxis: {
+                            type: 'datetime',
+                            crosshair: true,
+                            dateTimeLabelFormats: {
+                                year: '%Y'
+                            },
+                            showFirstLabel: true,
+                            showLastLabel: true,
+                            startOnTick: true,
+                            ////endOnTick:true,
+                            labels: {
+                                style: {
+                                    fontSize: '12px'
+                                }
+                            },
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'average ft<sup>3</sup>/s',
+                                style: {
+                                    fontSize: '11px'
+                                },
+                            },
+                            labels: {
+                                style: {
+                                    fontSize: '14px'
+                                },
+                            },
+                            max: 120,
+                            tickInterval: 40
+                        },
+                        tooltip: {
+                            positioner: function() {
+                                return {
+                                    x: this.chart.chartWidth - this.label.width - 10, // right aligned
+                                    y: 5
+                                };
+                                relativeTo: 'pumpChart'
+                            },
+                            shadow: true,
+                            borderWidth: 1,
+                            backgroundColor: 'rgba(255,255,255,0.8)',
+                            pointFormat: '<b>{point.y}</b><br/>',
+                            valueSuffix: ' ft<sup>3</sup>/s',
+                            valueDecimals: 1,
+                            padding: 4
+                        },
+                        plotOptions: {
+                            series: {
+                                marker: {
+                                    enabled: false,
+                                    states: {
+                                        hover: {
+                                            lineWidthPlus: 0,
+                                            fillColor: null
+                                        }
+                                    }
+                                }
+                            },
+                            followPointer: true
+                        },
+                        series: [{
+                            name: '(ft<sup>3</sup>/s)',
+                            data: data,
+                            lineWidth: 1,
+                            color: '#99791a'  // brown
+                        }],
+                    });
+                })
+                //});
+                //
+                // Q chart
+                //
+                $.getJSON("http://jonsnow.usc.edu:8081/mintmap/csv/Q_Syracuse.json").done(function(rawData) {
+                    var data = []
+                    $.each(rawData, function(index, item) {
+                        data.push([Date.UTC(item[0], item[1]), item[2]])
+                    })
+                    Highcharts.chart(self.$.qChart, {
+                        //$('#qChart').highcharts({
+                        title: {
+                            text: '<b>Streamflow</b>', //'Monthly Streamflow'
+                            margin: 5,
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        subtitle: {
+                            text: 'Syracuse Gage Station (USGS)', //'Syracuse Stream Gage Station (USGS)'
+                            style: {
+                                fontSize: '11px'
+                            }
+                        },
+                        credits: {
+                            enabled: false
+                        },
+                        legend: {
+                            enabled: false
+                        },
+                        // xAxis: {
+                        //     type: 'datetime',
+                        //     crosshair: true,
+                        //     startOnTick: true,
+                        //     //endOnTick:true,
+                        //     labels: {
+                        //         enabled: false
+                        //     },
+                        // },
+                        xAxis: {
+                            type: 'datetime',
+                            crosshair: true,
+                            dateTimeLabelFormats: {
+                                year: '%Y'
+                            },
+                            showFirstLabel: true,
+                            showLastLabel: true,
+                            startOnTick: true,
+                            ////endOnTick:true,
+                            labels: {
+                                style: {
+                                    fontSize: '12px'
+                                }
+                            },
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'average ft<sup>3</sup>/s',
+                                style: {
+                                    fontSize: '11px'
+                                },
+                            },
+                            labels: {
+                                style: {
+                                    fontSize: '14px'
+                                }
+                            },
+                            type: 'logarithmic',
+                            max: 10000,
+                            tickInterval: 2
+                        },
+                        tooltip: {
+                            positioner: function() {
+                                return {
+                                    x: this.chart.chartWidth - this.label.width - 10, // right aligned
+                                    y: 5
+                                };
+                                relativeTo: 'qChart'
+                            },
+                            shadow: true,
+                            borderWidth: 1,
+                            backgroundColor: 'rgba(255,255,255,0.8)',
+                            pointFormat: '<b>{point.y}</b><br/>',
+                            valueSuffix: ' ft<sup>3</sup>/s',
+                            valueDecimals: 1,
+                            padding: 4
+                        },
+                        plotOptions: {
+                            series: {
+                                marker: {
+                                    enabled: false,
+                                    fillColor: null, //get fill color for marker from series, doesn't work
+                                    states: {
+                                        hover: {
+                                            lineWidthPlus: 0,
+                                            fillColor: null //get fill color for marker when on mouse hover, doesn't work
+                                        }
+                                    }
+                                }
+                            },
+                            followPointer: true
+                        },
+                        series: [{
+                            name: '(ft<sup>3</sup>/s)',
+                            data: data,
+                            lineWidth: 1,
+                            color: '#0000FF',
+                            zones: [{
+                                value: 0,         // no flow
+                                color: '#000000'
+                            }, {
+                                value: 13.8,      // <10% flow
+                                color: '#c10b0b'  // old #bb0c0c
+                            }, {
+                                value: 54.975,    // 10-25% flow
+                                color: '#f7b709'  // old #f7bf26
+                            }, {
+                                value: 267.425,   // 25-75% flow
+                                color: '#70c11f'  // old #17d30d (neon green),#a4d13c (lime green), #26b71f (green)
+                            }, {
+                                value: 530.05,    // 75-90% flow
+                                color: '#08c6db'  // old #0091FE, #02dbc6 (turquoise blue)
+                            }, {
+                                value: 586.1,     // > 90% flow
+                                color: '#007ad6'  // old #00afd6
+                            }, {
+                                color: '#090b86'   // very high flow
+                            }]
+                        }],
+                    });
+                })
+                //});
+                //
+                // GW chart
+                //
+                $.getJSON("http://jonsnow.usc.edu:8081/mintmap/csv/GW_Hamilton.json").done(function(rawData) {
+                    var data = []
+                    $.each(rawData, function(index, item) {
+                        data.push([Date.UTC(item[0], item[1]), item[2]])
+                    })
+                    Highcharts.chart(self.$.gwChart, {
+                        //$('#gwChart').highcharts({
+                        title: {
+                            text: '<b>Groundwater Level</b>', //'Annual Groundwater Level',
+                            margin: 5,
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        subtitle: {
+                            text: 'Hamilton County (KGS)',
+                            style: {
+                                fontSize: '11px'
+                            }
+                        },
+                        credits: {
+                            enabled: false // Disables Highcharts.com stamp at the bottom of each chart. Only appears on the last chart.
+                        },
+                        legend: {
+                            enabled: false
+                        },
+                        // xAxis: { // old PDSI x-axis formatting
+                        //     type: 'datetime',
+                        //     crosshair: true,
+                        //     startOnTick: true,
+                        //     //endOnTick:true,
+                        //     labels: {
+                        //         enabled: false // Labels only appear on last chart as they apply to all the charts above and are connected by the synchronized crosshairs.
+                        //     },
+                        // },
+                        //GW x-axis old
+                      xAxis: {
+                        type: 'datetime',
+                        crosshair: true,
+                        dateTimeLabelFormats: {
+                            year: '%Y'
+                        },
+                        showFirstLabel: true,
+                        showLastLabel: true,
+                        startOnTick: true,
+                        ////endOnTick:true,
+                        labels: {
+                            style: {
+                                fontSize: '12px'
+                            }
+                        },
+                      },
+                          yAxis: {
+                            title: {
+                                text: 'average ft',
+                                style: {
+                                    fontSize: '11px'
+                                },
+                            },
+                            labels: {
+                                style: {
+                                    fontSize: '14px',
+                                },
+                            },
+                            min: -120,
+                            tickInterval: 40
+                        },
+                        tooltip: {
+                            positioner: function() {
+                                return {
+                                    x: this.chart.chartWidth - this.label.width - 10, // right aligned
+                                    y: 5
+                                };
+                                relativeTo: 'gwChart'
+                            },
+                            shadow: true,
+                            borderWidth: 1,
+                            backgroundColor: 'rgba(255,255,255,0.8)',
+                            pointFormat: '<b>{point.y}</b><br/>',
+                            valueSuffix: ' ft',
+                            valueDecimals: 1,
+                            padding: 4
+                        },
+                        plotOptions: {
+                            series: {
+                                marker: {
+                                    enabled: false,
+                                    fillColor: null, // inheret marker color from series, doesn't work
+                                    states: {
+                                        hover: {
+                                            lineWidthPlus: 0,
+                                            fillColor: null // inheret marker color from series, doesn't work
+                                        }
+                                    }
+                                }
+                            },
+                            followPointer: true
+                        },
+                        series: [{
+                            name: '(ft)',
+                            data: data,
+                            lineWidth: 1,
+                            color: '#7c2f8e'  // purple
+                        }],
+                    });
+                })
+                //
+                // PDSI chart
+                //
+                $.getJSON("http://jonsnow.usc.edu:8081/mintmap/csv/PDSI_7.json").done(function(rawData) {
+                    var data = []
+                    $.each(rawData, function(index, item) {
+                        data.push([Date.UTC(item[0], item[1]), item[2]])
+                    })
+                    Highcharts.chart(self.$.pdsiChart, { // Begin PDSI chart
+                        title: { // Chart title & formatting
+                            text: '<b>Wet/Dry Periods</b>',
+                            //margin: 5,
+                            style: {
+                                fontSize: '14px'
+                            }
+                        },
+                        subtitle: {
+                            text: 'KS Climate Div. 7 (NCEI)',
+                            style: {
+                                fontSize: '11px'
+                            }
+                        },
+                        // credits: {
+                        //     enabled: false // Disables Highcharts.com stamp at the bottom of each chart. Only appears on the last chart.
+                        // },
+                        legend: {
+                            enabled: false // Disables legend because the series are explained by title and axes lables.
+                        },
+                        xAxis: {
+                            type: 'datetime',
+                            crosshair: true,
+                            dateTimeLabelFormats: {
+                                year: '%Y'
+                            },
+                            showFirstLabel: true,
+                            showLastLabel: true,
+                            startOnTick: true,
+                            ////endOnTick:true,
+                            title: {
+                                text: 'Year',
+                                style: {
+                                    fontSize: '14px'
+                                }
+                            },
+                            labels: {
+                                style: {
+                                    //fontWeight: 'bold',
+                                    fontSize: '12px'
+                                }
+                            },
+                        },
+                        yAxis: { // y-axis formatting
+                            title: {
+                                text: 'Dry (-) |  Wet (+) <br />',
+                                style: {
+                                    fontSize: '11px' //'14px'
+                                },
+                            },
+                            labels: {
+                                style: {
+                                    fontSize: '14px'
+                                }
+                            },
+                            min: -6,
+                            max: 6,
+                            tickInterval: 3
+                          },
+                          tooltip: {
+                              positioner: function() {
+                                  return {
+                                      x: this.chart.chartWidth - this.label.width - 10, // right aligned
+                                      y: 5
+                                  };
+                                  relativeTo: 'pdsiChart'
+                              },
+                              shadow: true,
+                              borderWidth: 1,
+                              backgroundColor: 'rgba(255,255,255,0.8)',
+                              pointFormat: '<b>{point.y}</b><br/>',
+                              valueDecimals: 1,
+                              padding: 4
+                          },
+                        plotOptions: {
+                            series: {
+                                marker: {
+                                    enabled: false,
+                                    fillColor: null,
+                                    states: {
+                                        hover: {
+                                            lineWidthPlus: 0,
+                                            fillColor: null // inheret color from series, doesn't work
+                                        }
+                                    }
+                                },
+                            },
+                            followPointer: true
+                        },
+                        series: [{
+                            //id: 'PDSI',
+                            type: 'area',
+                            name: '(PDSI)',
+                            data: data,
+                            lineWidth: 1,
+                            zones: [{
+                                value: 0,
+                                color: '#FF6347'  // red
+                            }, {
+                                color: '#1E90FF'  // blue
+                            }],
+                        }],
+                    });
+                });   // Call data array for PDSI from JSON file
+                //END PDSI chart
+   
+
+            }
+        }
+        customElements.define(MintChart.is, MintChart);
+    </script>
 </dom-module>

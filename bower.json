@@ -3,7 +3,10 @@
   "description": "mint chart to display csv data using highcharts",
   "main": "mint-chart.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#^2.0.0"
+    "polymer": "Polymer/polymer#^2.6.0",
+    "shadycss": "^1.0.5",
+    "utils-lib": "PolymerVis/utils-lib#^2.0.0",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^2.1.0"
   },
   "devDependencies": {
     "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^2.0.0",
@@ -11,6 +14,6 @@
     "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
   },
   "resolutions": {
-    "polymer": "^2.0.0"
+    "polymer": "^2.6.0"
   }
 }

@@ -9,6 +9,7 @@
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
 <script src="https://code.highcharts.com/modules/drilldown.js"></script>
 <script src="https://code.highcharts.com/modules/series-label.js"></script>
@@ -17,10 +18,6 @@
 <dom-module id="mint-chart">
     <template>
         <div id="mintChart" style="width:100%;">
-            <div id="pumpChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div>
-            <div id="qChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div>
-            <div id="gwChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div>
-            <div id="pdsiChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div>
         </div>
         <slot></slot>
     </template>
@@ -36,11 +33,100 @@
             static get is() {return 'mint-chart'}
             static get properties() {
               return {
-                type: {type: String, value: 'spline'},
+                config: {
+                    type: Object,
+                    observer: '_configChanged',
+                    value: {}
+                }
               } 
+            }
+            _configChanged(newObj, oldObj) {
+                console.log(newObj)
+                if (JSON.stringify(newObj) !== JSON.stringify(oldObj)) {
+                    if (newObj.type === "combine") {
+                        this.initCombineChart();
+                    }
+                    if (newObj.type === "bubble") {
+                        this.initBubbleChart(newObj);
+                    }
+                }
             }
             ready() {
                 super.ready();
+            }
+
+            initBubbleChart(obj) {
+                let self = this;
+                $.getJSON(obj.data).done(function(json) {
+
+                    Highcharts.chart(self.$.mintChart, {
+                        chart: {
+                            type: 'bubble',
+                            plotBorderWidth: 1,
+                            zoomType: 'xy'
+                        },
+
+                        legend: {
+                            enabled: true
+                        },
+
+                        title: {
+                            text: obj.name
+                        },
+
+                        xAxis: {
+                            gridLineWidth: 1,
+                            title: {
+                                text: json.x.name
+                            },
+                            labels: {
+                                format: '{value} ' + json.x.unit
+                            },
+                            plotLines: []
+                        },
+
+                        yAxis: {
+                            startOnTick: false,
+                            endOnTick: false,
+                            title: {
+                                text: json.y.name
+                            },
+                            labels: {
+                                format: '{value} ' + json.y.unit
+                            },
+                            maxPadding: 0.2,
+                            plotLines: []
+                        },
+
+                        tooltip: {
+                            useHTML: true,
+                            headerFormat: '<table>',
+                            pointFormat: '<tr><th colspan="2"><h3>{series.name}</h3></th></tr>' +
+                                '<tr><th>' + json.x.name + ':</th><td>{point.x} '+json.x.unit+'</td></tr>' +
+                                '<tr><th>' + json.y.name + ':</th><td>{point.y} '+json.y.unit+'</td></tr>' +
+                                '<tr><th>' + json.z.name + ':</th><td>{point.z} '+json.z.unit+'</td></tr>',
+                            footerFormat: '</table>',
+                            followPointer: true
+                        },
+
+                        plotOptions: {
+                            series: {
+                                dataLabels: {
+                                    enabled: true,
+                                    format: '{point.z}'
+                                }
+                            }
+                        },
+
+                        series: json.series
+
+                    });
+                });
+            }
+
+            initHighChartForCombination(){
+                let combine = '<div id="pumpChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div><div id="qChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div><div id="gwChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div><div id="pdsiChart" style="width: 100%;height: auto; margin-left: auto; margin-right: auto"></div>';
+                $(this.$.mintChart).html(combine);
                 $(this.$.mintChart).bind('mousemove touchmove touchstart', function(e) {
                   var chart,
                     point,
@@ -71,7 +157,7 @@
 
                 function syncExtremes(e) {
                   var thisChart = this.chart;
-
+                  console.log('hi');
                   if (e.trigger !== 'syncExtremes') { // Prevent feedback loop
                     Highcharts.each(Highcharts.charts, function(chart) {
                       if (chart !== thisChart) {
@@ -89,7 +175,9 @@
                     });
                   }
                 }
-
+            }
+            initCombineChart() {
+                this.initHighChartForCombination();
                 let self = this;
                    //
                 // PUMP chart
@@ -99,7 +187,7 @@
                     $.each(rawData, function(index, item) {
                         data.push([Date.UTC(item[0], item[1]), item[2]])
                     })
-                    Highcharts.chart(self.$.pumpChart, {
+                    Highcharts.chart(self.$.mintChart.querySelector('#pumpChart'), {
                         title: {
                             text: '<b>Irrigation</b>', //'Annual Pumping'
                             margin: 5,
@@ -206,7 +294,7 @@
                     $.each(rawData, function(index, item) {
                         data.push([Date.UTC(item[0], item[1]), item[2]])
                     })
-                    Highcharts.chart(self.$.qChart, {
+                    Highcharts.chart(self.$.mintChart.querySelector('#qChart'), {
                         //$('#qChart').highcharts({
                         title: {
                             text: '<b>Streamflow</b>', //'Monthly Streamflow'
@@ -337,7 +425,7 @@
                     $.each(rawData, function(index, item) {
                         data.push([Date.UTC(item[0], item[1]), item[2]])
                     })
-                    Highcharts.chart(self.$.gwChart, {
+                    Highcharts.chart(self.$.mintChart.querySelector('#gwChart'), {
                         //$('#gwChart').highcharts({
                         title: {
                             text: '<b>Groundwater Level</b>', //'Annual Groundwater Level',
@@ -446,7 +534,7 @@
                     $.each(rawData, function(index, item) {
                         data.push([Date.UTC(item[0], item[1]), item[2]])
                     })
-                    Highcharts.chart(self.$.pdsiChart, { // Begin PDSI chart
+                    Highcharts.chart(self.$.mintChart.querySelector('#pdsiChart'), { // Begin PDSI chart
                         title: { // Chart title & formatting
                             text: '<b>Wet/Dry Periods</b>',
                             //margin: 5,
@@ -551,8 +639,6 @@
                     });
                 });   // Call data array for PDSI from JSON file
                 //END PDSI chart
-   
-
             }
         }
         customElements.define(MintChart.is, MintChart);

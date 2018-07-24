@@ -129,22 +129,27 @@
                 let combine = `<div id="Chart1" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div><div id="Chart2" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div><div id="Chart3" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div><div id="Chart4" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div>`;
                 $(this.$.mintChart).html(combine);                
                 $(this.$.mintChart).find('>div').bind('mousemove touchmove touchstart', function(e) {
-                  var chart,
-                    point,
-                    i,
-                    event;
-
-                  for (i = 0; i < Highcharts.charts.length; i = i + 1) {
-                    chart = Highcharts.charts[i];
-                    // Find coordinates within the chart
+                    var chart,
+                        point,
+                        index, // Indexes data so that the arrays all have the same positions starting at 0, which
+                        i, // fixed the problem with the data being misaligned even though the crosshairs were synced.
+                        event;
+                        // console.log($(this).highcharts());
+                    chart = $(this).highcharts();
                     event = chart.pointer.normalize(e.originalEvent);
-                    // Get the hovered point
-                    point = chart.series[0].searchPoint(event, true);
 
+                    //Find events within the charts
+                    point = chart.series[0].searchPoint(event, true);
                     if (point) {
-                      point.highlight(e);
+                        index = point.index
+                        for (i = 0; i < Highcharts.charts.length; i = i + 1) {
+                            chart = Highcharts.charts[i];
+                            point = chart.series[0].points[index]
+                            if (point) {
+                                point.highlight(e);
+                            }
+                        }
                     }
-                  }
                 });
                 Highcharts.Pointer.prototype.reset = function() {
                   return undefined;
@@ -152,7 +157,7 @@
                 Highcharts.Point.prototype.highlight = function(event) {
                   event = this.series.chart.pointer.normalize(event);
                   this.onMouseOver(); // Show the hover marker
-                  this.series.chart.tooltip.refresh(this); // Show the tooltip
+                  // this.series.chart.tooltip.refresh(this); // Show the tooltip
                   this.series.chart.xAxis[0].drawCrosshair(event, this); // Show the crosshair
                 };
                 function syncExtremes(e) {

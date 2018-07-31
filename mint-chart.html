@@ -50,16 +50,165 @@
                     if (newObj.type === "bubble") {
                         this.initBubbleChart(newObj);
                     }
+                    if (newObj.type === "pie") {
+                        this.initPieChart(newObj);
+                    }
                 }
             }
             ready() {
                 super.ready();
             }
+            initPieChart(obj){
+                var colors = Highcharts.getOptions().colors,
+                    categories = [
+                        "Sorghum",
+                        "Cassava",
+                        "Maize"
+                    ],
+                    data = [
+                        {
+                            "y": 715.95,
+                            "color": colors[2],
+                            "drilldown": {
+                                "name": "Sorghum",
+                                "categories": [
+                                    "Fertilizer Use",
+                                    "Land Use"
+                                ],
+                                "data": [
+                                    34.55,
+                                    455.61
+                                ]
+                            }
+                        },
+                        {
+                            "y": 131.18,
+                            "color": colors[1],
+                            "drilldown": {
+                                "name": "Cassava",
+                                "categories": [
+                                  "Fertilizer Use",
+                                  "Land Use"
+                                ],
+                                "data": [
+                                    2.74,
+                                    89.14
+                                ]
+                            }
+                        },
+                        {
+                            "y": 101.68,
+                            "color": colors[0],
+                            "drilldown": {
+                                "name": "Maize",
+                                "categories": [
+                                  "Fertilizer Use",
+                                  "Land Use"
+                                ],
+                                "data": [
+                                    8.31,
+                                    80.53
+                                ]
+                            }
+                        },
+                    ],
+                    crops = [],
+                    resourceUse = [],
+                    i,
+                    j,
+                    dataLen = data.length,
+                    drillDataLen,
+                    brightness;
+                // Build the data arrays
+                for (i = 0; i < dataLen; i += 1) {
+                // add production data for each crop type
+                crops.push({
+                    name: categories[i],
+                    y: data[i].y,
+                    color: data[i].color
+                });
+                // add resource use data
+                drillDataLen = data[i].drilldown.data.length;
+                for (j = 0; j < drillDataLen; j += 1) {
+                    brightness = 0.2 - (j / drillDataLen) / 5;
+                    resourceUse.push({
+                        name: data[i].drilldown.categories[j],
+                        y: data[i].drilldown.data[j],
+                        color: Highcharts.Color(data[i].color).brighten(brightness).get()
+                    });
+                }
+                }
+                // Create the chart
+                Highcharts.chart(self.$.mintChart, {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: 'Crop Production'
+                    },
+                    subtitle: {
+                        text: 'Data shown is from <a href="http://workflow.isi.edu/MINT/results/20180709/precip_5_percent_inc/">http://workflow.isi.edu/MINT/results/20180709/precip_5_percent_inc/</a>'
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Crop Production'
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            shadow: false,
+                            center: ['50%', '50%']
+                        }
+                    },
+                    tooltip: {
+                        // valueSuffix: '%'
+                    },
+                    series: [{
+                        name: 'Crop Production',
+                        data: crops,
+                        size: '60%',
+                        dataLabels: {
+                            formatter: function () {
+                                return this.y > 5 ? this.point.name : null;
+                            },
+                            color: '#ffffff',
+                            distance: -30
+                        }
+                    }, {
+                        name: 'Resource Use',
+                        data: resourceUse,
+                        size: '80%',
+                        innerSize: '60%',
+                        dataLabels: {
+                            formatter: function () {
+                                // display only if larger than 1
+                                return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+                                    this.y + '' : null;
+                            }
+                        },
+                        id: 'resources'
+                    }],
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 400
+                            },
+                            chartOptions: {
+                                series: [{
+                                    id: 'resources',
+                                    dataLabels: {
+                                        enabled: false
+                                    }
+                                }]
+                            }
+                        }]
+                    }
+                });
 
+            }
             initBubbleChart(obj) {
                 let self = this;
                 $.getJSON(obj.data).done(function(json) {
-
                     Highcharts.chart(self.$.mintChart, {
                         chart: {
                             type: 'bubble',
@@ -162,7 +311,6 @@
                 };
                 function syncExtremes(e) {
                   var thisChart = this.chart;
-                  console.log('hi');
                   if (e.trigger !== 'syncExtremes') { // Prevent feedback loop
                     Highcharts.each(Highcharts.charts, function(chart) {
                       if (chart !== thisChart) {

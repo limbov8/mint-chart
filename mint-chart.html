@@ -53,10 +53,177 @@
                     if (newObj.type === "pie") {
                         this.initPieChart(newObj);
                     }
+                    if (newObj.type === "pie" && newObj.name === "second") {
+                        this.initPieChart2(newObj);
+                    }
                 }
             }
             ready() {
                 super.ready();
+            }
+            initPieChart2(obj){
+                var self = this;
+                var colors = Highcharts.getOptions().colors,
+                    categories = [],
+                    data = [],
+                    crops = [],
+                    resourceUse = [],
+                    landArea = [],
+                    i,
+                    j,
+                    drillDataLen,
+                    brightness;
+                var pieOptions = {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: 'Crop Production'
+                    },
+                    subtitle: {
+                        text: ''
+                    },
+                    yAxis: {
+                        title: {
+                            text: ''
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            shadow: false,
+                            center: ['50%', '50%']
+                        }
+                    },
+                    tooltip: {
+                        // valueSuffix: '%'
+                    },
+                    series: [{
+                        name: 'Crop Production',
+                        data: crops,
+                        size: '60%',
+                        dataLabels: {
+                            formatter: function () {
+                                return this.y > 5 ? this.point.name : null;
+                            },
+                            color: '#ffffff',
+                            distance: -30
+                        }
+                    }, 
+                    {
+                        name: 'Land Area',
+                        data: landArea,
+                        size: '80%',
+                        innerSize: '60%',
+                        dataLabels: false
+                        // {
+                        //     formatter: function () {
+                        //         // display only if larger than 1
+                        //         return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+                        //             this.y + '' : null;
+                        //     }
+                        // },
+                    },
+                    {
+                        name: 'Resource Use',
+                        data: resourceUse,
+                        size: '90%',
+                        innerSize: '80%',
+                        dataLabels: {
+                            formatter: function () {
+                                // display only if larger than 1
+                                return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+                                    this.y + '' : null;
+                            }
+                        },
+                        id: 'resources'
+                    }],
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 400
+                            },
+                            chartOptions: {
+                                series: [{
+                                    id: 'resources',
+                                    dataLabels: {
+                                        enabled: false
+                                    }
+                                }]
+                            }
+                        }]
+                    }
+                }
+                
+                let csvTitles = [];
+                Highcharts.ajax({
+                    url: this.resolveUrl('./crop.csv'),
+                    dataType: 'text',
+                    success: function(csv) {
+                        var lines = csv.split('\n');
+                        lines.forEach(function(line, lineNo) {
+                            line = line.replace(/\"/g,"");
+                            var items = line.split(',');
+                            // header line containes categories
+                            if (lineNo == 0) {
+                                items.forEach(function(item, itemNo) {
+                                    csvTitles.push(item);
+                                });
+                            }else {
+                                let year_region = "." + items[0] + "." + items[1] + ".";
+                                var ele = {y:0, landarea: 0, color:colors[lineNo-1],drilldown:{name:"",categories:[],data:[]}};
+                                items.forEach(function(item, itemNo) {
+                                    if (csvTitles[itemNo] === 'crop') {
+                                        categories.push(item);
+                                        ele.drilldown.name = item ;//+ year_region;
+                                    }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'production (kg)':3,'land area (ha)':4})){
+                                        ele.drilldown.categories.push(csvTitles[itemNo])
+                                        ele.drilldown.data.push(parseFloat(item));
+                                    }else if(csvTitles[itemNo] === 'production (kg)'){
+                                        ele.y = parseFloat(item);
+                                    }else if(csvTitles[itemNo] === 'land area (ha)'){
+                                        ele.landarea = parseFloat(item);
+                                    }
+                                });
+                                data.push(ele);
+                            }
+                        });
+                        var dataLen = data.length;
+                        // Build the data arrays
+                        for (i = 0; i < dataLen; i += 1) {
+                            // add production data for each crop type
+                            crops.push({
+                                name: categories[i],
+                                y: data[i].y,
+                                color: data[i].color
+                            });
+                            landArea.push({
+                                name: categories[i],
+                                y: data[i].landarea,
+                                color: data[i].color
+                            })
+                            // add resource use data
+                            drillDataLen = data[i].drilldown.data.length;
+                            for (j = 0; j < drillDataLen; j += 1) {
+                                brightness = 0.2 - (j / drillDataLen) / 5;
+                                resourceUse.push({
+                                    name: data[i].drilldown.name + "." + data[i].drilldown.categories[j],
+                                    y: data[i].drilldown.data[j],
+                                    color: Highcharts.Color(data[i].color).brighten(brightness).get()
+                                });
+                            }
+                        }
+                        // Create the chart
+                        pieOptions.series[0].data = crops;
+                        pieOptions.series[2].data = landArea;
+                        pieOptions.series[2].data = resourceUse;
+                        Highcharts.chart(self.$.mintChart, pieOptions);
+                    },
+                    error: function (e, t) {
+                        console.error(e, t);
+                    }
+                });
+                
+
             }
             initPieChart(obj){
                 var self = this;
@@ -123,21 +290,21 @@
                 // Build the data arrays
                 for (i = 0; i < dataLen; i += 1) {
                 // add production data for each crop type
-                crops.push({
-                    name: categories[i],
-                    y: data[i].y,
-                    color: data[i].color
-                });
-                // add resource use data
-                drillDataLen = data[i].drilldown.data.length;
-                for (j = 0; j < drillDataLen; j += 1) {
-                    brightness = 0.2 - (j / drillDataLen) / 5;
-                    resourceUse.push({
-                        name: data[i].drilldown.categories[j],
-                        y: data[i].drilldown.data[j],
-                        color: Highcharts.Color(data[i].color).brighten(brightness).get()
+                    crops.push({
+                        name: categories[i],
+                        y: data[i].y,
+                        color: data[i].color
                     });
-                }
+                    // add resource use data
+                    drillDataLen = data[i].drilldown.data.length;
+                    for (j = 0; j < drillDataLen; j += 1) {
+                        brightness = 0.2 - (j / drillDataLen) / 5;
+                        resourceUse.push({
+                            name: data[i].drilldown.categories[j],
+                            y: data[i].drilldown.data[j],
+                            color: Highcharts.Color(data[i].color).brighten(brightness).get()
+                        });
+                    }
                 }
                 // Create the chart
                 Highcharts.chart(self.$.mintChart, {

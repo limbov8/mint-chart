@@ -177,12 +177,12 @@
                                     csvTitles.push(item);
                                 });
                             }else {
-                                let year_region = "." + items[0] + "." + items[1] + ".";
+                                let year_region = items[0] + "." + items[1];
                                 var ele = {y:0, landarea: 0, yield:0, color:colors[lineNo-1],drilldown:{name:"",categories:[],data:[]}};
                                 items.forEach(function(item, itemNo) {
                                     if (csvTitles[itemNo] === 'crop') {
-                                        categories.push(item);
-                                        ele.drilldown.name = item ;//+ year_region;
+                                        categories.push(year_region + "." + item);
+                                        ele.drilldown.name = year_region + "." + item;
                                     }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'production (kg)':3,'land area (ha)':4, 'yield (kg/ha)':5})){
                                         ele.drilldown.categories.push(csvTitles[itemNo])
                                         ele.drilldown.data.push(parseFloat(item));
@@ -221,7 +221,7 @@
                             for (j = 0; j < drillDataLen; j += 1) {
                                 brightness = 0.2 - (j / drillDataLen) / 5;
                                 resourceUse.push({
-                                    name: data[i].drilldown.name + "." + data[i].drilldown.categories[j],
+                                    name: data[i].drilldown.name,
                                     y: data[i].drilldown.data[j],
                                     color: Highcharts.Color(data[i].color).brighten(brightness).get()
                                 });

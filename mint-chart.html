@@ -67,6 +67,7 @@
                     categories = [],
                     data = [],
                     crops = [],
+                    yield_kg = [],
                     resourceUse = [],
                     landArea = [],
                     i,
@@ -112,7 +113,7 @@
                     {
                         name: 'Land Area',
                         data: landArea,
-                        size: '80%',
+                        size: '70%',
                         innerSize: '60%',
                         dataLabels: false
                         // {
@@ -124,7 +125,14 @@
                         // },
                     },
                     {
-                        name: 'Resource Use',
+                        name: 'Yield (kg/ha)',
+                        data: yield_kg,
+                        size: '80%',
+                        innerSize: '70%',
+                        dataLabels: false
+                    },
+                    {
+                        name: 'Nfert Use (kg/ha)',
                         data: resourceUse,
                         size: '90%',
                         innerSize: '80%',
@@ -170,18 +178,20 @@
                                 });
                             }else {
                                 let year_region = "." + items[0] + "." + items[1] + ".";
-                                var ele = {y:0, landarea: 0, color:colors[lineNo-1],drilldown:{name:"",categories:[],data:[]}};
+                                var ele = {y:0, landarea: 0, yield:0, color:colors[lineNo-1],drilldown:{name:"",categories:[],data:[]}};
                                 items.forEach(function(item, itemNo) {
                                     if (csvTitles[itemNo] === 'crop') {
                                         categories.push(item);
                                         ele.drilldown.name = item ;//+ year_region;
-                                    }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'production (kg)':3,'land area (ha)':4})){
+                                    }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'production (kg)':3,'land area (ha)':4, 'yield (kg/ha)':5})){
                                         ele.drilldown.categories.push(csvTitles[itemNo])
                                         ele.drilldown.data.push(parseFloat(item));
                                     }else if(csvTitles[itemNo] === 'production (kg)'){
                                         ele.y = parseFloat(item);
                                     }else if(csvTitles[itemNo] === 'land area (ha)'){
                                         ele.landarea = parseFloat(item);
+                                    }else if(csvTitles[itemNo] === 'yield (kg/ha)'){
+                                        ele.yield = parseFloat(item);
                                     }
                                 });
                                 data.push(ele);
@@ -200,7 +210,12 @@
                                 name: categories[i],
                                 y: data[i].landarea,
                                 color: data[i].color
-                            })
+                            });
+                            yield_kg.push({
+                                name: categories[i],
+                                y: data[i].yield,
+                                color: data[i].color
+                            });
                             // add resource use data
                             drillDataLen = data[i].drilldown.data.length;
                             for (j = 0; j < drillDataLen; j += 1) {
@@ -214,8 +229,9 @@
                         }
                         // Create the chart
                         pieOptions.series[0].data = crops;
-                        pieOptions.series[2].data = landArea;
-                        pieOptions.series[2].data = resourceUse;
+                        pieOptions.series[1].data = landArea;
+                        pieOptions.series[2].data = yield_kg;
+                        pieOptions.series[3].data = resourceUse;
                         Highcharts.chart(self.$.mintChart, pieOptions);
                     },
                     error: function (e, t) {

@@ -99,7 +99,7 @@
                         // valueSuffix: '%'
                     },
                     series: [{
-                        name: 'Crop Production',
+                        name: 'Yield (kg/ha) Base',
                         data: crops,
                         size: '60%',
                         dataLabels: {
@@ -111,10 +111,10 @@
                         }
                     }, 
                     {
-                        name: 'Land Area',
+                        name: 'Yield (kg/ha) +5%',
                         data: landArea,
                         size: '70%',
-                        innerSize: '60%',
+                        innerSize: '50%',
                         dataLabels: false
                         // {
                         //     formatter: function () {
@@ -125,17 +125,11 @@
                         // },
                     },
                     {
-                        name: 'Yield (kg/ha)',
+                        name: 'Yield (kg/ha) -5%',
                         data: yield_kg,
-                        size: '80%',
-                        innerSize: '70%',
-                        dataLabels: false
-                    },
-                    {
-                        name: 'Nfert Use (kg/ha)',
-                        data: resourceUse,
                         size: '90%',
-                        innerSize: '80%',
+                        innerSize: '70%',
+                        dataLabels: false,
                         dataLabels: {
                             formatter: function () {
                                 // display only if larger than 1
@@ -183,16 +177,17 @@
                                     if (csvTitles[itemNo] === 'crop') {
                                         categories.push(year_region + "." + item);
                                         ele.drilldown.name = year_region + "." + item;
-                                    }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'production (kg)':3,'land area (ha)':4, 'yield (kg/ha)':5})){
+                                    }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'yield (kg/ha) Base':3,'yield (kg/ha) +5%':4})){
                                         ele.drilldown.categories.push(csvTitles[itemNo])
                                         ele.drilldown.data.push(parseFloat(item));
-                                    }else if(csvTitles[itemNo] === 'production (kg)'){
+                                    }else if(csvTitles[itemNo] === 'yield (kg/ha) Base'){
                                         ele.y = parseFloat(item);
-                                    }else if(csvTitles[itemNo] === 'land area (ha)'){
+                                    }else if(csvTitles[itemNo] === 'yield (kg/ha) +5%'){
                                         ele.landarea = parseFloat(item);
-                                    }else if(csvTitles[itemNo] === 'yield (kg/ha)'){
-                                        ele.yield = parseFloat(item);
                                     }
+                                    // else if(csvTitles[itemNo] === 'yield (kg/ha) -5%'){
+                                    //     ele.yield = parseFloat(item);
+                                    // }
                                 });
                                 data.push(ele);
                             }
@@ -211,11 +206,11 @@
                                 y: data[i].landarea,
                                 color: data[i].color
                             });
-                            yield_kg.push({
-                                name: categories[i],
-                                y: data[i].yield,
-                                color: data[i].color
-                            });
+                            // yield_kg.push({
+                            //     name: categories[i],
+                            //     y: data[i].yield,
+                            //     color: data[i].color
+                            // });
                             // add resource use data
                             drillDataLen = data[i].drilldown.data.length;
                             for (j = 0; j < drillDataLen; j += 1) {
@@ -230,8 +225,8 @@
                         // Create the chart
                         pieOptions.series[0].data = crops;
                         pieOptions.series[1].data = landArea;
-                        pieOptions.series[2].data = yield_kg;
-                        pieOptions.series[3].data = resourceUse;
+                        // pieOptions.series[2].data = yield_kg;
+                        pieOptions.series[2].data = resourceUse;
                         Highcharts.chart(self.$.mintChart, pieOptions);
                     },
                     error: function (e, t) {

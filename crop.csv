@@ -1,6 +1,6 @@
-"year","region","crop","fert_subsidy (%)","land area (ha)","yield (kg/ha)","production (kg)","Nfert (kg/ha)"
-"2016","pongo","cassava",0.00,84453.00,1543.70,130370096.10,32.00
-"2016","pongo","groundnuts",0.00,287035.00,574.80,164987718.00,32.00
-"2016","pongo","maize",0.00,94308.00,1134.60,107001856.80,95.00
-"2016","pongo","sesame",0.00,611644.00,330.30,202026013.20,32.00
-"2016","pongo","sorghum",0.00,446514.00,1594.60,712011224.40,76.00
+year,region,crop,yield (kg/ha) Base,yield (kg/ha) +5%,yield (kg/ha) -5%
+2016,pongo,cassava,1543.7,1620.885,1466.515
+2016,pongo,groundnuts,574.8,603.54,546.06
+2016,pongo,maize,1134.6,1191.33,1077.87
+2016,pongo,sesame,330.3,346.815,313.785
+2016,pongo,sorghum,1594.6,1674.33,1514.87

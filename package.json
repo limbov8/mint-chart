@@ -2,10 +2,11 @@
   "name": "mint-chart",
   "description": "Mint Chart Visualization",
   "main": "mint-chart.js",
-  "version":"0.1.0",
+  "version": "0.1.0",
   "dependencies": {
     "@polymer/polymer": "^3.0.0",
-    "highcharts": "^7.0.1"
+    "highcharts": "^7.0.1",
+    "jquery": "^3.3.1"
   },
   "devDependencies": {
     "@polymer/iron-demo-helpers": "^3.0.0-pre.19",

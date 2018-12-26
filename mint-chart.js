@@ -1,4 +1,5 @@
 import {html, PolymerElement} from '@polymer/polymer/polymer-element.js';
+import 'jquery';
 import 'highcharts';
 import 'highcharts/highcharts-more';
 import 'highcharts/modules/data';

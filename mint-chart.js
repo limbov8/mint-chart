@@ -7,6 +7,7 @@ import 'highcharts/modules/exporting';
 import 'highcharts/modules/drilldown';
 import 'highcharts/modules/series-label';
 import 'highcharts/modules/export-data';
+import 'highcharts/es-modules/themes/gray';
 // console.logHighchartsMore;
 // loadExporting(Highcharts);
 // loadDrilldown(Highcharts);
@@ -20,8 +21,9 @@ import 'highcharts/modules/export-data';
  * @demo demo/index.html
  */
 
-const HighchartsColors = ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',
-            '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'];
+const HighchartsColors = Highcharts.theme.color;
+// ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',
+            // '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'];
 class MintChart extends PolymerElement {
   static get template() {
     return html`

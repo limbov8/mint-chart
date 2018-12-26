@@ -468,12 +468,14 @@ class MintChart extends PolymerElement {
           //Find events within the charts
           point = chart.series[0].searchPoint(event, true);
           if (point) {
-              index = point.index
+              index = point.index;
               for (i = 0; i < Highcharts.charts.length; i = i + 1) {
-                  chart = Highcharts.charts[i];
-                  point = chart.series[0].points[index]
-                  if (point) {
-                      point.highlight(e);
+                  let chart_i = Highcharts.charts[i];
+                  if (!!chart_i) {
+                    point = chart_i.series[0].points[index]
+                    if (point) {
+                        point.highlight(e);
+                    }
                   }
               }
           }

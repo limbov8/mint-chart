@@ -1,5 +1,8 @@
 # \<mint-chart\>
 
+![Published by Libo Liu](https://img.shields.io/badge/Libo%20Liu-Author-blue.svg)
+![Published by Yijun Lin](https://img.shields.io/badge/Yijun%20Lin-Author-blue.svg)
+
 Mint Chart Visualization
 
 ## Install the Polymer-CLI

@@ -276,10 +276,10 @@ class MintChart extends PolymerElement {
                 // },
                 legend: {
                     layout: 'vertical',
-                    align: 'left',
-                    verticalAlign: 'top',
-                    x: 100,
-                    y: 80,
+                    align: 'right',
+                    verticalAlign: 'bottom',
+                    x: -5,
+                    y: -50,
                     floating: true,
                     backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF',
                     borderWidth: 1

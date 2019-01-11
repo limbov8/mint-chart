@@ -254,7 +254,7 @@ class MintChart extends PolymerElement {
                     zoomType: 'xy'
                 },
                 title: {
-                    text: 'How to call the title of this graph?'
+                    text: 'Grain yield and perciptation in dry and rainy season'
                 },
                 xAxis: {
                     title: {

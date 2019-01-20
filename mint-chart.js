@@ -91,12 +91,12 @@ class MintChart extends PolymerElement {
     var self = this;
     $.getJSON(MINTY_API_SERVER + '/minty/chart/' + id, function (json) {
       if (json.type === 'bar') {
-        createBarChart(json.data);
+        self.createBarChart(json.data);
       }else if (json.type === 'donut') {
         // Pie == Donut
-        createPieChart(json.data);
+        self.createPieChart(json.data);
       }else if (json.type === 'dot') {
-        createDotChart(json.grain_data, json.precip_data);
+        self.createDotChart(json.grain_data, json.precip_data);
       }
     });
   }
@@ -165,8 +165,9 @@ class MintChart extends PolymerElement {
     });
   }
   initBarChart(obj){
+    var self = this;
     $.get('http://jonsnow.usc.edu:8081/mintmap/csv/climatology.csv', function(data) {
-      createBarChart(data);
+      self.createBarChart(data);
     });
   }
   createDotChart(grain_data, precip_data){
@@ -354,18 +355,20 @@ class MintChart extends PolymerElement {
     });
   }
   initDotChart(obj){
+    var self = this;
     $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/season.dat', function(grain_data) {
         $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/weather.dat', function(precip_data) {
-          createDotChart(grain_data, precip_data);
+          self.createDotChart(grain_data, precip_data);
         });
     });
   }
   initPieChart2(obj){
+      var self = this;
       Highcharts.ajax({
           url: "http://jonsnow.usc.edu:8081/mintmap/csv/crop.csv",
           dataType: 'text',
           success: function(csv) {
-              createPieChart(csv);
+              self.createPieChart(csv);
           },
           error: function (e, t) {
               console.error(e, t);

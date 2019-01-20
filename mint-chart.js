@@ -95,12 +95,12 @@ class MintChart extends PolymerElement {
     }
     $.getJSON(MINTY_API_SERVER + '/minty/chart/' + id, function (json) {
       if (json.type === 'bar') {
-        self.createBarChart(json.data, json.title);
+        self.createBarChart(json.data, json.title.replace(/&nbsp;/g,' '));
       }else if (json.type === 'donut') {
         // Pie == Donut
-        self.createPieChart(json.data, json.title);
+        self.createPieChart(json.data, json.title.replace(/&nbsp;/g,' '));
       }else if (json.type === 'dot') {
-        self.createDotChart(json.data, json.data1, json.title);
+        self.createDotChart(json.data, json.title.replace(/&nbsp;/g,' '));
         // self.createDotChart(json.grain_data, json.precip_data);
       }
     });
@@ -175,124 +175,76 @@ class MintChart extends PolymerElement {
       self.createBarChart(data, 'Yearly spatially aggregated precipitation forecast');
     });
   }
-  createDotChart(grain_data, precip_data, title){
+  createDotChart(grain_data, title){
     var self = this;
     var lines = grain_data.split('\n');
     var years = [];
-    var summerGrainYield = [];
-    var winterGrainYield = [];
-    var grainName = "";
-    var grainUnit = "";
-    
+    var sX = {}, sY = {};
+    var wX = {}, wY = {};
+    var sTag = "", wTag = "";
+    var sYears = [], wYears = [];
+    var grainName = "", xName = "", yName = "";
+        
     $.each(lines, function(lineNo, lineContent){
-        if(lineNo > 1 && lineContent.length > 0)
+        if(lineNo > 0 && lineContent.length > 0)
         {  
-            var lineList = lineContent.replace(/\t/g, ' ').split(/\s+/);
-            var dateTime = lineList[1];
-            var year = parseInt(dateTime.split('-')[0]);
-            var month = parseInt(dateTime.split('-')[1]);
-            var grainYield = parseFloat(lineList[5]);
+            var lineList = lineContent.split(',');
+            var x = parseFloat(lineList[4]);
+            var y = parseFloat(lineList[3]);
+            var tag = lineList[2]
+            var time = lineList[1]
+            var year = parseInt(time.split('-')[0]);
+            var month = parseInt(time.split('-')[1]);
 
             if(month >= 10 || month < 4) {
-                winterGrainYield.push(grainYield);
-                years.push(year);
+                wX[year] = x;
+                wY[year] = y;
+                wTag = tag
+                wYears.push(year);
+                grainName=lineList[0].split('_')[1];
             }
-            else
-                summerGrainYield.push(grainYield);
+            else if(month >= 4 && month < 10){
+                sX[year] = x;
+                sY[year] = y;
+                sTag = tag
+                sYears.push(year);
+            }
         }
         else if(lineNo == 0) 
         {
-            var lineList=lineContent.trim().split('\t').map(function(ele) { return ele.trim() });
-            grainName=lineList[5];
-        }
-        else if(lineNo == 1) 
-        {
-            var lineList=lineContent.trim().split('\t').map(function(ele) { return ele.trim() });
-            grainUnit=lineList[5];
-            // console.log(lineList);
-            // console.log(grainUnit);
+            var lineList=lineContent.split(',');
+            xName = lineList[4];
+            yName = lineList[3];
         }
     });
 
-    var lines = precip_data.split('\n');
-    var winterPrecipDict = {};
-    var summerPrecipDict = {};
+    var years = wYears.filter(function(v){ return sYears.indexOf(v) > -1 })
+    years = years.sort()
 
-    for(var i=0; i< years.length; i++)
-    {
-        winterPrecipDict[years[i]] = [];
-        summerPrecipDict[years[i]] = [];
-    }
-
-    var precipName = "";
-    var precipUnit = "";
-
-    $.each(lines, function(lineNo, lineContent){
-        if(lineNo > 1 && lineContent.length > 0)
-        {  
-            var lineList = lineContent.replace(/\t/g, ' ').split(/\s+/);
-            var dateTime = lineList[1];
-            var year = parseInt(dateTime.split('-')[0]);
-            var month = parseInt(dateTime.split('-')[1]);
-            var precip = parseFloat(lineList[6]);
-
-            if(month >= 10 || month < 4)
-            {
-                winterPrecipDict[year].push(precip);
-            }
-            else
-                summerPrecipDict[year].push(precip);
-        }
-        else if(lineNo == 0) 
-        {
-            var lineList = lineContent.trim().split('\t').map(function(ele) { return ele.trim() });
-            precipName = lineList[6];
-        }
-        else if(lineNo == 1) 
-        {
-            var lineList = lineContent.trim().split('\t').map(function(ele) { return ele.trim() });
-            precipUnit = lineList[6];
-        }
-    });
-
-    var winterPrecip = [];
-    var summerPrecip = [];
-
-    console.log(precipName, precipUnit);
-
-    Object.keys(winterPrecipDict).sort().forEach(function(key) {
-        var s = winterPrecipDict[key].reduce((a, b) => a + b, 0);
-        winterPrecip.push(s/winterPrecipDict[key].length);
-    });
-
-    Object.keys(summerPrecipDict).sort().forEach(function(key) {
-        var s = summerPrecipDict[key].reduce((a, b) => a + b, 0);
-        summerPrecip.push(s/summerPrecipDict[key].length);
-    });
-
-    var winterValue = [];
-    var summerValue = [];
-    var totalValue = [];
+    var wValue = [];
+    var sValue = [];
+    var avgValue = [];
 
     for(var i=0; i<years.length; i++)
     {
-        winterValue.push([winterPrecip[i], winterGrainYield[i]]);
-        summerValue.push([summerPrecip[i], summerGrainYield[i]]);
-        totalValue.push([(winterPrecip[i]+summerPrecip[i])/2, (winterGrainYield[i]+summerGrainYield[i])/2])
+        var year = years[i]
+        sValue.push([sX[year], sY[year]]);
+        wValue.push([wX[year], wY[year]]);
+        avgValue.push([(sX[year] + sY[year]) / 2, (wX[year] + wY[year]) / 2])
     }
 
     Highcharts.chart(self.$.mintChart, {
         chart: {        
             type: 'scatter',
-            zoomType: 'xy'
+            zoomType: 'xy',
         },
         title: {
-            text: title
+            text: title + grainName.toUpperCase()
         },
         xAxis: {
             title: {
                 enabled: true,
-                text: precipName + ', ' + precipUnit
+                text: xName
             },
             startOnTick: true,
             endOnTick: true,
@@ -300,18 +252,14 @@ class MintChart extends PolymerElement {
         },
         yAxis: {
             title: {
-                text: grainName + ', ' + grainUnit
+                text: yName
             }
         },
-        // tooltip: {
-        //     headerFormat: '<b>PRECIPITATION:</b> {point.x}<br/>',
-        //     pointFormat: '<b>GRAIN YIELD:</b> {point.y}<br/>'
-        // },
         legend: {
             layout: 'vertical',
             align: 'right',
             verticalAlign: 'bottom',
-            x: -5,
+            x: -20,
             y: -50,
             floating: true,
             backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF',
@@ -338,34 +286,34 @@ class MintChart extends PolymerElement {
                     }
                 },
                 tooltip: {
-                    headerFormat: '<b>PRECIPITATION:</b> {point.x}<br/>',
-                    pointFormat: '<b>GRAIN YIELD:</b> {point.y}<br/>'
+                    headerFormat: `<b>${xName}:</b> {point.x}<br/>`,
+                    pointFormat: `<b>${yName}:</b> {point.y}<br/>`
                 }
             }
         },
         series: [{
-            name: 'Dry Season',
+            name: wTag,
             color: 'red',
-            data: winterValue
+            data: wValue
 
         },{
-            name: 'Rainy Season',
+            name: sTag,
             color: 'green',
-            data: summerValue
+            data: sValue
         },{
-            name: 'Total',
+            name: 'Average',
             color: 'blue',
-            data: totalValue
+            data: avgValue
         }]
     });
   }
   initDotChart(obj){
     var self = this;
-    $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/season.dat', function(grain_data) {
-        $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/weather.dat', function(precip_data) {
-          self.createDotChart(grain_data, precip_data, 'Grain yield and perciptation in dry and rainy season');
-        });
-    });
+    // $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/season.dat', function(grain_data) {
+    //     $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/weather.dat', function(precip_data) {
+    //       self.createDotChart(grain_data, 'MODELED&nbsp;GRAIN&nbsp;YIELD&nbsp;AND&nbsp;PRECIPITATION&nbsp;FOR&nbsp;');
+    //     });
+    // });
   }
   initPieChart2(obj){
       var self = this;

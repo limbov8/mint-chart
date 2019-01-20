@@ -89,6 +89,9 @@ class MintChart extends PolymerElement {
   }
   initById(id){
     var self = this;
+    if (typeof id !== "string") {
+      return;
+    }
     $.getJSON(MINTY_API_SERVER + '/minty/chart/' + id, function (json) {
       if (json.type === 'bar') {
         self.createBarChart(json.data);

@@ -21,6 +21,7 @@ import 'highcharts/themes/grid-light';
  * @demo demo/index.html
  */
 const MINTY_API_SERVER = "http://52.90.74.236:65533";
+// const MINTY_API_SERVER = "http://0.0.0.0:65522";
 const HighchartsColors = Highcharts.theme.colors;
 // ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',
             // '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'];
@@ -94,16 +95,17 @@ class MintChart extends PolymerElement {
     }
     $.getJSON(MINTY_API_SERVER + '/minty/chart/' + id, function (json) {
       if (json.type === 'bar') {
-        self.createBarChart(json.data);
+        self.createBarChart(json.data, json.title);
       }else if (json.type === 'donut') {
         // Pie == Donut
-        self.createPieChart(json.data);
+        self.createPieChart(json.data, json.title);
       }else if (json.type === 'dot') {
-        self.createDotChart(json.grain_data, json.precip_data);
+        self.createDotChart(json.data, json.data1, json.title);
+        // self.createDotChart(json.grain_data, json.precip_data);
       }
     });
   }
-  createBarChart(data){
+  createBarChart(data, title){
     var self = this;
     var lines = data.split('\n');
     var dat = {};
@@ -138,7 +140,7 @@ class MintChart extends PolymerElement {
             type: 'column'
         },
         title: {
-            text: 'Yearly spatially aggregated precipitation forecast'
+            text: title
         },
         xAxis: {
             categories: years,
@@ -170,10 +172,10 @@ class MintChart extends PolymerElement {
   initBarChart(obj){
     var self = this;
     $.get('http://jonsnow.usc.edu:8081/mintmap/csv/climatology.csv', function(data) {
-      self.createBarChart(data);
+      self.createBarChart(data, 'Yearly spatially aggregated precipitation forecast');
     });
   }
-  createDotChart(grain_data, precip_data){
+  createDotChart(grain_data, precip_data, title){
     var self = this;
     var lines = grain_data.split('\n');
     var years = [];
@@ -285,7 +287,7 @@ class MintChart extends PolymerElement {
             zoomType: 'xy'
         },
         title: {
-            text: 'Grain yield and perciptation in dry and rainy season'
+            text: title
         },
         xAxis: {
             title: {
@@ -361,7 +363,7 @@ class MintChart extends PolymerElement {
     var self = this;
     $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/season.dat', function(grain_data) {
         $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/weather.dat', function(precip_data) {
-          self.createDotChart(grain_data, precip_data);
+          self.createDotChart(grain_data, precip_data, 'Grain yield and perciptation in dry and rainy season');
         });
     });
   }
@@ -371,14 +373,14 @@ class MintChart extends PolymerElement {
           url: "http://jonsnow.usc.edu:8081/mintmap/csv/crop.csv",
           dataType: 'text',
           success: function(csv) {
-              self.createPieChart(csv);
+              self.createPieChart(csv, 'Crop Production');
           },
           error: function (e, t) {
               console.error(e, t);
           }
       });
   }
-  createPieChart(csv){
+  createPieChart(csv,title){
     var self = this;
     var colors = HighchartsColors,
         categories = [],
@@ -396,7 +398,7 @@ class MintChart extends PolymerElement {
             type: 'pie'
         },
         title: {
-            text: 'Crop Production'
+            text: title
         },
         subtitle: {
             text: ''

@@ -100,11 +100,6 @@ class MintChart extends PolymerElement {
       }
     });
   }
-  initBarChart(obj){
-    $.get('http://jonsnow.usc.edu:8081/mintmap/csv/climatology.csv', function(data) {
-      createBarChart(data);
-    });
-  }
   createBarChart(data){
     var self = this;
     var lines = data.split('\n');
@@ -169,11 +164,9 @@ class MintChart extends PolymerElement {
         }]
     });
   }
-  initDotChart(obj){
-    $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/season.dat', function(grain_data) {
-        $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/weather.dat', function(precip_data) {
-          createDotChart(grain_data, precip_data);
-        });
+  initBarChart(obj){
+    $.get('http://jonsnow.usc.edu:8081/mintmap/csv/climatology.csv', function(data) {
+      createBarChart(data);
     });
   }
   createDotChart(grain_data, precip_data){
@@ -358,6 +351,13 @@ class MintChart extends PolymerElement {
             color: 'blue',
             data: totalValue
         }]
+    });
+  }
+  initDotChart(obj){
+    $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/season.dat', function(grain_data) {
+        $.get('http://jonsnow.usc.edu:8081/mintmap/csv/SS_corn/weather.dat', function(precip_data) {
+          createDotChart(grain_data, precip_data);
+        });
     });
   }
   initPieChart2(obj){

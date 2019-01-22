@@ -230,7 +230,7 @@ class MintChart extends PolymerElement {
         var year = years[i]
         sValue.push([sX[year], sY[year]]);
         wValue.push([wX[year], wY[year]]);
-        avgValue.push([(sX[year] + sY[year]) / 2, (wX[year] + wY[year]) / 2])
+        avgValue.push([(sX[year] + wX[year]) / 2, (sY[year] + wY[year]) / 2])
     }
 
     Highcharts.chart(self.$.mintChart, {

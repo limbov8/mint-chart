@@ -20,7 +20,7 @@ import 'highcharts/themes/grid-light';
  * @polymer
  * @demo demo/index.html
  */
-const MINTY_API_SERVER = "http://52.90.74.236:65533";
+const MINTY_API_SERVER = "http://minty.mintviz.org";
 // const MINTY_API_SERVER = "http://0.0.0.0:65522";
 const HighchartsColors = Highcharts.theme.colors;
 // ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',

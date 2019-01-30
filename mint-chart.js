@@ -53,7 +53,7 @@ class MintChart extends PolymerElement {
     };
   }
   _idChanged(newId, oldId){
-    console.log(newId);
+    // console.log(newId);
     if (newId !== oldId && newId.length > 0) {
       this.initById(newId);
     }else{
@@ -64,7 +64,7 @@ class MintChart extends PolymerElement {
       if (JSON.stringify(newObj).length === 2 ) {
         return;
       }
-      console.log(newObj)
+      // console.log(newObj)
       if (JSON.stringify(newObj) !== JSON.stringify(oldObj)) {
           if (newObj.type === "combine") {
               this.initCombineChart();
@@ -119,7 +119,7 @@ class MintChart extends PolymerElement {
             {
                 var lineList=lineContent.split(',')
                 dat[parseInt(lineList[1])]=parseFloat(lineList[2]);
-                console.log(lineNo, lineContent)
+                // console.log(lineNo, lineContent)
             }
         else
             {

@@ -45,17 +45,19 @@ class MintChart extends PolymerElement {
           observer: '_configChanged',
           value: {}
       },
-      id: {
+      viz_config_id: {
           type: String,
           observer: '_idChanged',
-          value: {}
+          value: ""
       }
     };
   }
   _idChanged(newId, oldId){
     console.log(newId);
-    if (newId !== oldId) {
+    if (newId !== oldId && newId.length > 0) {
       this.initById(newId);
+    }else{
+      console.error(newId + " doesn't work.")
     }
   }
   _configChanged(newObj, oldObj) {

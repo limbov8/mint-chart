@@ -7,7 +7,7 @@ import 'highcharts/modules/exporting';
 import 'highcharts/modules/drilldown';
 import 'highcharts/modules/series-label';
 import 'highcharts/modules/export-data';
-import 'highcharts/themes/grid-light';
+// import 'highcharts/themes/grid';
 // console.logHighchartsMore;
 // loadExporting(Highcharts);
 // loadDrilldown(Highcharts);
@@ -22,7 +22,9 @@ import 'highcharts/themes/grid-light';
  */
 const MINTY_API_SERVER = "http://minty.mintviz.org";
 // const MINTY_API_SERVER = "http://0.0.0.0:65522";
-const HighchartsColors = Highcharts.theme.colors;
+const HighchartsColors = ['#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572',
+        '#FF9655', '#FFF263', '#6AF9C4'];
+        // Highcharts.theme.colors;
 // ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',
             // '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'];
 class MintChart extends PolymerElement {
@@ -330,25 +332,71 @@ class MintChart extends PolymerElement {
           }
       });
   }
-  createPieChart(csv,title){
+  createPieChart(csv, title){
     var self = this;
-    var colors = HighchartsColors,
-        categories = [],
-        data = [],
-        crops = [],
-        yield_kg = [],
-        resourceUse = [],
-        landArea = [],
-        i,
-        j,
-        drillDataLen,
-        brightness;
+    
+    var data = [];
+    var runs = [];
+
+    let header = [];
+    var lines = csv.split('\n');
+    lines.forEach(function(line, lineNo) {
+
+        line = line.replace(/\"/g,"");
+        var items = line.split(',');
+        let year_region = items[0] + "." + items[1];
+
+        // header line
+        if (lineNo == 0) {
+            items.forEach(function(item, itemNo) {
+                header.push(item);
+                if(itemNo > 2) runs.push(item); // run name
+            });
+        }
+        else if (line != ''){
+            var ele = {
+                color: HighchartsColors[lineNo - 1], 
+                drilldown: {
+                    name:"", 
+                    categories:[], 
+                    data:[]
+                }
+            };
+            items.forEach(function(item, itemNo) {
+                if (itemNo === 2) { // crop name
+                    ele.drilldown.name = year_region + "." + item;
+                }else if(itemNo > 2){
+                    ele.drilldown.categories.push(header[itemNo])
+                    ele.drilldown.data.push(parseFloat(item));
+                }
+            });
+            data.push(ele);
+        }
+    });
+
+    var seriesData = {};
+    for(var i = 0; i < runs.length; i += 1) seriesData[runs[i]] = [];
+
+    var dataLen = data.length;
+    for (var i = 0; i < dataLen; i += 1) {   
+        var drillDataLen = data[i].drilldown.data.length;
+        for (var j = 0; j < drillDataLen; j += 1) {
+            var brightness = 0.2 - (j / drillDataLen) / 5;
+            var run = data[i].drilldown.categories[j]
+            seriesData[run].push({
+                name: data[i].drilldown.name,
+                y: data[i].drilldown.data[j],
+                color: Highcharts.Color(data[i].color).brighten(brightness).get()
+            });
+        }
+    }
+    // console.log(seriesData[Object.keys(seriesData)[0]]
     var pieOptions = {
         chart: {
             type: 'pie'
         },
         title: {
-            text: title
+            text: title.replace(/&nbsp;/g, ' ')
         },
         subtitle: {
             text: ''
@@ -368,8 +416,8 @@ class MintChart extends PolymerElement {
             // valueSuffix: '%'
         },
         series: [{
-            name: 'Yield (kg/ha) Base',
-            data: crops,
+            name: Object.keys(seriesData)[0],
+            data: seriesData[Object.keys(seriesData)[0]],
             size: '60%',
             dataLabels: {
                 formatter: function () {
@@ -380,22 +428,15 @@ class MintChart extends PolymerElement {
             }
         }, 
         {
-            name: 'Yield (kg/ha) +5%',
-            data: landArea,
+            name: Object.keys(seriesData)[1],
+            data: seriesData[Object.keys(seriesData)[1]],
             size: '70%',
             innerSize: '50%',
             dataLabels: false
-            // {
-            //     formatter: function () {
-            //         // display only if larger than 1
-            //         return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
-            //             this.y + '' : null;
-            //     }
-            // },
         },
         {
-            name: 'Yield (kg/ha) -5%',
-            data: yield_kg,
+            name: Object.keys(seriesData)[2],
+            data: seriesData[Object.keys(seriesData)[2]],
             size: '90%',
             innerSize: '70%',
             dataLabels: false,
@@ -423,74 +464,7 @@ class MintChart extends PolymerElement {
                 }
             }]
         }
-    }
-    let csvTitles = [];
-    var lines = csv.split('\n');
-    lines.forEach(function(line, lineNo) {
-        line = line.replace(/\"/g,"");
-        var items = line.split(',');
-        // header line containes categories
-        if (lineNo == 0) {
-            items.forEach(function(item, itemNo) {
-                csvTitles.push(item);
-            });
-        }else {
-            let year_region = items[0] + "." + items[1];
-            var ele = {y:0, landarea: 0, yield:0, color:colors[lineNo-1],drilldown:{name:"",categories:[],data:[]}};
-            items.forEach(function(item, itemNo) {
-                if (csvTitles[itemNo] === 'crop') {
-                    categories.push(year_region + "." + item);
-                    ele.drilldown.name = year_region + "." + item;
-                }else if(!(csvTitles[itemNo] in {'year':0,'region':1,'crop':2,'yield (kg/ha) Base':3,'yield (kg/ha) +5%':4})){
-                    ele.drilldown.categories.push(csvTitles[itemNo])
-                    ele.drilldown.data.push(parseFloat(item));
-                }else if(csvTitles[itemNo] === 'yield (kg/ha) Base'){
-                    ele.y = parseFloat(item);
-                }else if(csvTitles[itemNo] === 'yield (kg/ha) +5%'){
-                    ele.landarea = parseFloat(item);
-                }
-                // else if(csvTitles[itemNo] === 'yield (kg/ha) -5%'){
-                //     ele.yield = parseFloat(item);
-                // }
-            });
-            data.push(ele);
-        }
-    });
-    var dataLen = data.length;
-    // Build the data arrays
-    for (i = 0; i < dataLen; i += 1) {
-        // add production data for each crop type
-        crops.push({
-            name: categories[i],
-            y: data[i].y,
-            color: data[i].color
-        });
-        landArea.push({
-            name: categories[i],
-            y: data[i].landarea,
-            color: data[i].color
-        });
-        // yield_kg.push({
-        //     name: categories[i],
-        //     y: data[i].yield,
-        //     color: data[i].color
-        // });
-        // add resource use data
-        drillDataLen = data[i].drilldown.data.length;
-        for (j = 0; j < drillDataLen; j += 1) {
-            brightness = 0.2 - (j / drillDataLen) / 5;
-            resourceUse.push({
-                name: data[i].drilldown.name,
-                y: data[i].drilldown.data[j],
-                color: Highcharts.Color(data[i].color).brighten(brightness).get()
-            });
-        }
-    }
-    // Create the chart
-    pieOptions.series[0].data = crops;
-    pieOptions.series[1].data = landArea;
-    // pieOptions.series[2].data = yield_kg;
-    pieOptions.series[2].data = resourceUse;
+    };
     Highcharts.chart(self.$.mintChart, pieOptions);
   }
   initPieChart(obj){

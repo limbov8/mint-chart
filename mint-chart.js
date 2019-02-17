@@ -106,6 +106,8 @@ class MintChart extends PolymerElement {
       }else if (json.type === 'dot') {
         self.createDotChart(json.data, json.title.replace(/&nbsp;/g,' '));
         // self.createDotChart(json.grain_data, json.precip_data);
+      }else if (json.type === 'bubble'){
+        self.createBubbleChart(json.data, json.title.replace(/&nbsp;/g,' '));
       }
     });
   }
@@ -113,8 +115,8 @@ class MintChart extends PolymerElement {
     var self = this;
     var lines = data.split('\n');
     var dat = {};
-    var xName = ''
-    var yName = ''
+    var xName = '';
+    var yName = '';
 
     $.each(lines, function(lineNo, lineContent){
         if(lineNo > 0 && lineContent.length > 0)
@@ -615,72 +617,68 @@ class MintChart extends PolymerElement {
           }
       });
   }
+  createBubbleChart(json, title){
+    let self = this;
+    Highcharts.chart(self.$.mintChart, {
+        chart: {
+            type: 'bubble',
+            plotBorderWidth: 1,
+            zoomType: 'xy'
+        },
+        legend: {
+            enabled: true
+        },
+        title: {
+            text: title.replace(/&nbsp;/g, ' ')
+        },
+        xAxis: {
+            gridLineWidth: 1,
+            title: {
+                text: json.x.name
+            },
+            labels: {
+                format: '{value} ' + json.x.unit
+            },
+            plotLines: []
+        },
+        yAxis: {
+            startOnTick: false,
+            endOnTick: false,
+            title: {
+                text: json.y.name
+            },
+            labels: {
+                format: '{value} ' + json.y.unit
+            },
+            maxPadding: 0.2,
+            plotLines: []
+        },
+        tooltip: {
+            useHTML: true,
+            headerFormat: '<table>',
+            pointFormat: '<tr><th colspan="2"><h3>{series.name}</h3></th></tr>' +
+                '<tr><th>' + json.x.name + ':</th><td>{point.x} '+json.x.unit+'</td></tr>' +
+                '<tr><th>' + json.y.name + ':</th><td>{point.y} '+json.y.unit+'</td></tr>' +
+                '<tr><th>' + json.z.name + ':</th><td>{point.z} '+json.z.unit+'</td></tr>',
+            footerFormat: '</table>',
+            followPointer: true
+        },
+        plotOptions: {
+            series: {
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.z}'
+                }
+            }
+        },
+        series: json.series
+    });
+  }
   initBubbleChart(obj) {
-      let self = this;
-      $.getJSON(obj.data).done(function(json) {
-          Highcharts.chart(self.$.mintChart, {
-              chart: {
-                  type: 'bubble',
-                  plotBorderWidth: 1,
-                  zoomType: 'xy'
-              },
-
-              legend: {
-                  enabled: true
-              },
-
-              title: {
-                  text: obj.name
-              },
-
-              xAxis: {
-                  gridLineWidth: 1,
-                  title: {
-                      text: json.x.name
-                  },
-                  labels: {
-                      format: '{value} ' + json.x.unit
-                  },
-                  plotLines: []
-              },
-
-              yAxis: {
-                  startOnTick: false,
-                  endOnTick: false,
-                  title: {
-                      text: json.y.name
-                  },
-                  labels: {
-                      format: '{value} ' + json.y.unit
-                  },
-                  maxPadding: 0.2,
-                  plotLines: []
-              },
-
-              tooltip: {
-                  useHTML: true,
-                  headerFormat: '<table>',
-                  pointFormat: '<tr><th colspan="2"><h3>{series.name}</h3></th></tr>' +
-                      '<tr><th>' + json.x.name + ':</th><td>{point.x} '+json.x.unit+'</td></tr>' +
-                      '<tr><th>' + json.y.name + ':</th><td>{point.y} '+json.y.unit+'</td></tr>' +
-                      '<tr><th>' + json.z.name + ':</th><td>{point.z} '+json.z.unit+'</td></tr>',
-                  footerFormat: '</table>',
-                  followPointer: true
-              },
-
-              plotOptions: {
-                  series: {
-                      dataLabels: {
-                          enabled: true,
-                          format: '{point.z}'
-                      }
-                  }
-              },
-
-              series: json.series
-
-          });
-      });
+    let self = this;
+    $.getJSON(obj.data).done(function(json) {
+        self.createBubbleChart(json, obj.name)
+    });
   }
   initHighChartForCombination(){
       let combine = `<div id="Chart1" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div><div id="Chart2" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div><div id="Chart3" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div><div id="Chart4" style="width: 100%;height: 190px; margin-left: auto; margin-right: auto"></div>`;
